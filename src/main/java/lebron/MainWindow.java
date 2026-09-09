@@ -57,6 +57,10 @@ public class MainWindow {
      */
     @FXML
     private void handleUserInput() {
+        // Main.start() must call setLebron() before the window is shown, so
+        // this can only be null if that wiring is ever broken -- fail loudly
+        // here under -ea instead of a confusing NullPointerException below.
+        assert lebron != null : "setLebron() must be called before the window is shown";
         String input = userInput.getText();
         if (input.isBlank()) {
             return;
