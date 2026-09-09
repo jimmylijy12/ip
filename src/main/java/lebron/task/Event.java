@@ -21,7 +21,7 @@ public class Event extends Task {
     /** Returns the data-file line, e.g. {@code E | 0 | camp | 2019-06-01 | 2019-06-03}. */
     @Override
     public String toFileFormat() {
-        return "E | " + doneBit() + " | " + description + " | "
+        return "E | " + getDoneBit() + " | " + description + " | "
                 + from.toFileFormat() + " | " + to.toFileFormat();
     }
 

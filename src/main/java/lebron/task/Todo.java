@@ -14,6 +14,6 @@ public class Todo extends Task {
     /** Returns the data-file line, e.g. {@code T | 0 | read book}. */
     @Override
     public String toFileFormat() {
-        return "T | " + doneBit() + " | " + description;
+        return "T | " + getDoneBit() + " | " + description;
     }
 }

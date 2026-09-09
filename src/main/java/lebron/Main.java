@@ -15,6 +15,11 @@ import javafx.stage.Stage;
  * the console version ({@link Lebron#main(String[])}) uses.
  */
 public class Main extends Application {
+    private static final double DEFAULT_WIDTH = 400;
+    private static final double DEFAULT_HEIGHT = 600;
+    private static final double MIN_WIDTH = 340;
+    private static final double MIN_HEIGHT = 220;
+
     private final Lebron lebron = new Lebron(Paths.get("data", "lebron.txt"));
 
     /**
@@ -28,11 +33,11 @@ public class Main extends Application {
         try {
             FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("/view/MainWindow.fxml"));
             AnchorPane root = fxmlLoader.load();
-            Scene scene = new Scene(root, 400, 600);
+            Scene scene = new Scene(root, DEFAULT_WIDTH, DEFAULT_HEIGHT);
             stage.setScene(scene);
             stage.setTitle("Lebron");
-            stage.setMinWidth(340);
-            stage.setMinHeight(220);
+            stage.setMinWidth(MIN_WIDTH);
+            stage.setMinHeight(MIN_HEIGHT);
 
             MainWindow controller = fxmlLoader.getController();
             controller.setLebron(lebron);

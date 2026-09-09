@@ -35,7 +35,7 @@ public abstract class Task {
 
     /** Returns {@code "X"} if the task is done, or a single space otherwise. */
     public String getStatusIcon() {
-        return isDone ? "X" : " "; // mark done task with X
+        return isDone ? "X" : " ";
     }
 
     /** Marks this task as done. */
@@ -48,8 +48,8 @@ public abstract class Task {
         isDone = false;
     }
 
-    /** Shared helper for subclasses: the {@code 1}/{@code 0} done flag. */
-    protected String doneBit() {
+    /** Shared helper for subclasses: returns the {@code 1}/{@code 0} done flag. */
+    protected String getDoneBit() {
         return isDone ? "1" : "0";
     }
 
