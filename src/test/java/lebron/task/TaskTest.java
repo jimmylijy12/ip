@@ -117,6 +117,63 @@ public class TaskTest {
                 Task.fromFileFormat("D | 0 | return book | someday"));
     }
 
+    // ---- fromFileFormat: recurrence (B-RecurringTasks) --------------------
+
+    @Test
+    public void fromFileFormat_deadlineWithRecurrence_returnsRecurringDeadline() {
+        Task task = Task.fromFileFormat("D | 0 | pay rent | 2025-01-01 | month");
+        assertEquals("[D][ ] pay rent (by: Jan 01 2025) (every: month)", task.toString());
+    }
+
+    @Test
+    public void fromFileFormat_eventWithRecurrence_returnsRecurringEvent() {
+        Task task = Task.fromFileFormat("E | 0 | standup | 2025-01-06 0900 | 2025-01-06 0930 | week");
+        assertEquals("[E][ ] standup (from: Jan 06 2025 9:00am to: Jan 06 2025 9:30am) (every: week)",
+                task.toString());
+    }
+
+    @Test
+    public void fromFileFormat_deadlineWithoutRecurrence_isBackwardCompatible() {
+        // Pre-existing 4-field D lines (no recurrence) must still load fine.
+        Task task = Task.fromFileFormat("D | 0 | return book | 2019-12-02");
+        assertEquals("[D][ ] return book (by: Dec 02 2019)", task.toString());
+    }
+
+    @Test
+    public void fromFileFormat_eventWithoutRecurrence_isBackwardCompatible() {
+        // Pre-existing 5-field E lines (no recurrence) must still load fine.
+        Task task = Task.fromFileFormat("E | 0 | camp | 2019-06-01 | 2019-06-03");
+        assertEquals("[E][ ] camp (from: Jun 01 2019 to: Jun 03 2019)", task.toString());
+    }
+
+    @Test
+    public void fromFileFormat_deadlineUnrecognisedRecurrence_throws() {
+        assertThrows(IllegalArgumentException.class, () ->
+                Task.fromFileFormat("D | 0 | pay rent | 2025-01-01 | fortnight"));
+    }
+
+    @Test
+    public void fromFileFormat_deadlineTooManyFields_throws() {
+        assertThrows(IllegalArgumentException.class, () ->
+                Task.fromFileFormat("D | 0 | pay rent | 2025-01-01 | month | extra"));
+    }
+
+    @Test
+    public void roundTrip_recurringDeadline_preservesLineAndDisplay() {
+        Task original = new Deadline("pay rent", DateTime.parse("2025-01-01"), RecurrencePeriod.MONTH);
+        Task restored = Task.fromFileFormat(original.toFileFormat());
+        assertEquals(original.toFileFormat(), restored.toFileFormat());
+        assertEquals(original.toString(), restored.toString());
+    }
+
+    @Test
+    public void roundTrip_recurringEvent_preservesLine() {
+        Task original = new Event("standup",
+                DateTime.parse("2025-01-06 0900"), DateTime.parse("2025-01-06 0930"), RecurrencePeriod.WEEK);
+        Task restored = Task.fromFileFormat(original.toFileFormat());
+        assertEquals(original.toFileFormat(), restored.toFileFormat());
+    }
+
     // ---- base class done-status behaviour --------------------------------
 
     @Test

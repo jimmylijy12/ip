@@ -4,6 +4,7 @@ import lebron.exception.LebronException;
 import lebron.task.DateTime;
 import lebron.task.Deadline;
 import lebron.task.Event;
+import lebron.task.RecurrencePeriod;
 import lebron.task.Task;
 
 /**
@@ -85,27 +86,34 @@ public class Parser {
     }
 
     /**
-     * Builds a {@link Deadline} from {@code <description> /by <date>}.
+     * Builds a {@link Deadline} from {@code <description> /by <date> [/every <period>]}.
      *
      * @param arguments the text after the {@code deadline} keyword
      * @return the deadline task
-     * @throws LebronException if the description or date is missing or the
-     *     date cannot be understood
+     * @throws LebronException if the description or date is missing, the
+     *     date cannot be understood, or {@code /every} is malformed
      */
     private static Task parseDeadline(String arguments) throws LebronException {
         String usage = "OOPS!!! A deadline needs a description and a /by date, "
-                + "e.g. deadline return book /by 2019-12-02 1800";
+                + "e.g. deadline return book /by 2019-12-02 1800 [/every day|week|month]";
         int byIndex = arguments.indexOf("/by");
         if (byIndex == -1) {
             throw new LebronException(usage);
         }
+        int everyIndex = arguments.indexOf("/every");
+        if (everyIndex != -1 && everyIndex < byIndex) {
+            throw new LebronException("OOPS!!! /every must come after /by.");
+        }
         String description = arguments.substring(0, byIndex).trim();
-        String by = arguments.substring(byIndex + "/by".length()).trim();
+        String by = (everyIndex == -1
+                ? arguments.substring(byIndex + "/by".length())
+                : arguments.substring(byIndex + "/by".length(), everyIndex)).trim();
         if (description.isEmpty() || by.isEmpty()) {
             throw new LebronException(usage);
         }
+        RecurrencePeriod recurrence = parsePeriodIfPresent(arguments, everyIndex);
         try {
-            return new Deadline(description, DateTime.parse(by));
+            return new Deadline(description, DateTime.parse(by), recurrence);
         } catch (IllegalArgumentException e) {
             throw new LebronException("OOPS!!! I don't understand the date '" + by
                     + "'. Try e.g. 2019-12-02 or 2019-12-02 1800.");
@@ -113,32 +121,67 @@ public class Parser {
     }
 
     /**
-     * Builds an {@link Event} from {@code <description> /from <start> /to <end>}.
+     * Builds an {@link Event} from
+     * {@code <description> /from <start> /to <end> [/every <period>]}.
      *
      * @param arguments the text after the {@code event} keyword
      * @return the event task
-     * @throws LebronException if a part is missing or a date cannot be
-     *     understood
+     * @throws LebronException if a part is missing, a date cannot be
+     *     understood, or {@code /every} is malformed
      */
     private static Task parseEvent(String arguments) throws LebronException {
         String usage = "OOPS!!! An event needs a description, a /from and a /to date, "
-                + "e.g. event project meeting /from 2019-12-02 1400 /to 2019-12-02 1600";
+                + "e.g. event project meeting /from 2019-12-02 1400 /to 2019-12-02 1600 [/every day|week|month]";
         int fromIndex = arguments.indexOf("/from");
         int toIndex = arguments.indexOf("/to");
         if (fromIndex == -1 || toIndex == -1 || toIndex < fromIndex) {
             throw new LebronException(usage);
         }
+        int everyIndex = arguments.indexOf("/every");
+        if (everyIndex != -1 && everyIndex < toIndex) {
+            throw new LebronException("OOPS!!! /every must come after /to.");
+        }
         String description = arguments.substring(0, fromIndex).trim();
         String from = arguments.substring(fromIndex + "/from".length(), toIndex).trim();
-        String to = arguments.substring(toIndex + "/to".length()).trim();
+        String to = (everyIndex == -1
+                ? arguments.substring(toIndex + "/to".length())
+                : arguments.substring(toIndex + "/to".length(), everyIndex)).trim();
         if (description.isEmpty() || from.isEmpty() || to.isEmpty()) {
             throw new LebronException(usage);
         }
+        RecurrencePeriod recurrence = parsePeriodIfPresent(arguments, everyIndex);
         try {
-            return new Event(description, DateTime.parse(from), DateTime.parse(to));
+            return new Event(description, DateTime.parse(from), DateTime.parse(to), recurrence);
         } catch (IllegalArgumentException e) {
             throw new LebronException("OOPS!!! I don't understand one of those dates. "
                     + "Try e.g. 2019-12-02 or 2019-12-02 1800.");
+        }
+    }
+
+    /**
+     * Parses an optional trailing {@code /every <period>}. The caller has
+     * already confirmed {@code everyIndex} (if not -1) comes after the
+     * command's date flag(s).
+     *
+     * @param arguments the full argument text
+     * @param everyIndex the index of {@code /every} in {@code arguments}, or -1 if absent
+     * @return the period, or {@code null} if {@code arguments} had no {@code /every}
+     * @throws LebronException if {@code /every} is present but has no value,
+     *     or the value isn't day/week/month
+     */
+    private static RecurrencePeriod parsePeriodIfPresent(String arguments, int everyIndex) throws LebronException {
+        if (everyIndex == -1) {
+            return null;
+        }
+        String periodText = arguments.substring(everyIndex + "/every".length()).trim();
+        if (periodText.isEmpty()) {
+            throw new LebronException("OOPS!!! Tell me how often, e.g. /every week (day, week, or month).");
+        }
+        try {
+            return RecurrencePeriod.parse(periodText);
+        } catch (IllegalArgumentException e) {
+            throw new LebronException("OOPS!!! '" + periodText
+                    + "' isn't a recurrence I understand. Try day, week, or month.");
         }
     }
 }

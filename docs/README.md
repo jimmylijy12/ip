@@ -20,6 +20,29 @@ Example: `keyword (optional arguments)`
 expected output
 ```
 
+## Recurring tasks
+
+Add `/every day`, `/every week`, or `/every month` to a `deadline` or `event`
+command to make it repeat. `/every` must come after the command's date(s)
+(after `/by` for a deadline, after `/to` for an event).
+
+Example: `deadline pay rent /by 2025-01-01 /every month`
+```
+added: [D][ ] pay rent (by: Jan 01 2025) (every: month)
+```
+
+Marking a recurring task done doesn't check it off -- it rolls the date(s)
+forward to the next occurrence instead, and stays unchecked:
+
+Example: `mark 1`
+```
+Nice! I've marked this task as done. Since it recurs, I've scheduled the next occurrence:
+  [D][ ] pay rent (by: Feb 01 2025) (every: month)
+```
+
+For a recurring event, both the start and end shift forward together, so
+the event keeps the same duration.
+
 ## Feature ABC
 
 // Feature details

@@ -92,6 +92,28 @@ public class ParserTest {
         assertThrows(LebronException.class, () -> Parser.parse("deadline return book /by someday"));
     }
 
+    @Test
+    public void parse_deadlineWithEvery_returnsRecurringDeadline() throws LebronException {
+        ParsedCommand command = Parser.parse("deadline pay rent /by 2025-01-01 /every month");
+        assertEquals("[D][ ] pay rent (by: Jan 01 2025) (every: month)", command.getTask().toString());
+    }
+
+    @Test
+    public void parse_deadlineEveryUnrecognisedPeriod_throws() {
+        assertThrows(LebronException.class, () ->
+                Parser.parse("deadline pay rent /by 2025-01-01 /every fortnight"));
+    }
+
+    @Test
+    public void parse_deadlineEveryWithoutValue_throws() {
+        assertThrows(LebronException.class, () -> Parser.parse("deadline pay rent /by 2025-01-01 /every"));
+    }
+
+    @Test
+    public void parse_deadlineEveryBeforeBy_throws() {
+        assertThrows(LebronException.class, () -> Parser.parse("deadline pay rent /every month /by 2025-01-01"));
+    }
+
     // ---- event -----------------------------------------------------
 
     @Test
@@ -123,6 +145,20 @@ public class ParserTest {
     public void parse_eventUnparseableDate_throws() {
         assertThrows(LebronException.class, () ->
                 Parser.parse("event meeting /from someday /to 2019-12-02"));
+    }
+
+    @Test
+    public void parse_eventWithEvery_returnsRecurringEvent() throws LebronException {
+        ParsedCommand command =
+                Parser.parse("event standup /from 2025-01-06 0900 /to 2025-01-06 0930 /every week");
+        assertEquals("[E][ ] standup (from: Jan 06 2025 9:00am to: Jan 06 2025 9:30am) (every: week)",
+                command.getTask().toString());
+    }
+
+    @Test
+    public void parse_eventEveryBeforeTo_throws() {
+        assertThrows(LebronException.class, () ->
+                Parser.parse("event standup /every week /from 2025-01-06 0900 /to 2025-01-06 0930"));
     }
 
     // ---- mark / unmark / delete ----------------------------------

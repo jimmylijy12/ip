@@ -619,7 +619,7 @@ blocks.
 - **Expected output:**
   ```
   ____________________________________________________________
-  OOPS!!! A deadline needs a description and a /by date, e.g. deadline return book /by 2019-12-02 1800
+  OOPS!!! A deadline needs a description and a /by date, e.g. deadline return book /by 2019-12-02 1800 [/every day|week|month]
   ____________________________________________________________
   ____________________________________________________________
   Bye. Hope to see you again soon!
@@ -782,4 +782,156 @@ blocks.
   ____________________________________________________________
   Bye. Hope to see you again soon!
   ____________________________________________________________
+  ```
+
+## Test Case: Add a recurring deadline and see it roll forward on mark
+
+- **Aim:** `deadline ... /every <period>` creates a recurring deadline shown
+  with an `(every: ...)` suffix; `mark` on it advances the due date by one
+  period and leaves it not done, with its own confirmation message, instead
+  of staying marked done.
+- **Commands:**
+  ```
+  deadline pay rent /by 2025-01-01 /every month
+  mark 1
+  list
+  bye
+  ```
+- **Expected output:**
+  ```
+  ____________________________________________________________
+  added: [D][ ] pay rent (by: Jan 01 2025) (every: month)
+  ____________________________________________________________
+  ____________________________________________________________
+  Nice! I've marked this task as done. Since it recurs, I've scheduled the next occurrence:
+    [D][ ] pay rent (by: Feb 01 2025) (every: month)
+  ____________________________________________________________
+  ____________________________________________________________
+  Here are the tasks in your list:
+  1.[D][ ] pay rent (by: Feb 01 2025) (every: month)
+  ____________________________________________________________
+  ____________________________________________________________
+  Bye. Hope to see you again soon!
+  ____________________________________________________________
+  ```
+
+## Test Case: Add a recurring event and see both endpoints roll forward
+
+- **Aim:** `event ... /every <period>` creates a recurring event; marking it
+  done advances both `/from` and `/to` by one period, keeping the event's
+  duration.
+- **Commands:**
+  ```
+  event standup /from 2025-01-06 0900 /to 2025-01-06 0930 /every week
+  mark 1
+  bye
+  ```
+- **Expected output:**
+  ```
+  ____________________________________________________________
+  added: [E][ ] standup (from: Jan 06 2025 9:00am to: Jan 06 2025 9:30am) (every: week)
+  ____________________________________________________________
+  ____________________________________________________________
+  Nice! I've marked this task as done. Since it recurs, I've scheduled the next occurrence:
+    [E][ ] standup (from: Jan 13 2025 9:00am to: Jan 13 2025 9:30am) (every: week)
+  ____________________________________________________________
+  ____________________________________________________________
+  Bye. Hope to see you again soon!
+  ____________________________________________________________
+  ```
+
+## Test Case: Reject an unrecognised recurrence period
+
+- **Aim:** `/every` with anything other than day/week/month is rejected with
+  a clear message, and the task is not created.
+- **Commands:**
+  ```
+  deadline pay rent /by 2025-01-01 /every fortnight
+  list
+  bye
+  ```
+- **Expected output:**
+  ```
+  ____________________________________________________________
+  OOPS!!! 'fortnight' isn't a recurrence I understand. Try day, week, or month.
+  ____________________________________________________________
+  ____________________________________________________________
+  Here are the tasks in your list:
+  ____________________________________________________________
+  ____________________________________________________________
+  Bye. Hope to see you again soon!
+  ____________________________________________________________
+  ```
+
+## Test Case: Reject /every with no value
+
+- **Aim:** `/every` given with nothing after it is rejected with a usage
+  hint rather than crashing or silently ignoring it.
+- **Commands:**
+  ```
+  deadline pay rent /by 2025-01-01 /every
+  bye
+  ```
+- **Expected output:**
+  ```
+  ____________________________________________________________
+  OOPS!!! Tell me how often, e.g. /every week (day, week, or month).
+  ____________________________________________________________
+  ____________________________________________________________
+  Bye. Hope to see you again soon!
+  ____________________________________________________________
+  ```
+
+## Test Case: Load an old-format data file with no recurrence field
+
+- **Aim:** Backward compatibility: a data file saved before recurring tasks
+  existed (4-field `D` lines, 5-field `E` lines, no trailing period) still
+  loads correctly, as non-recurring tasks.
+- **Commands:**
+  ```
+  list
+  bye
+  ```
+- **Expected output:**
+  ```
+  ____________________________________________________________
+  Here are the tasks in your list:
+  1.[D][ ] old deadline (by: Dec 02 2019)
+  2.[E][ ] old event (from: Jun 01 2019 to: Jun 03 2019)
+  ____________________________________________________________
+  ____________________________________________________________
+  Bye. Hope to see you again soon!
+  ____________________________________________________________
+  ```
+- **Data file:**
+  ```
+  D | 0 | old deadline | 2019-12-02
+  E | 0 | old event | 2019-06-01 | 2019-06-03
+  ```
+
+## Test Case: Skip a data-file line with a corrupted recurrence period
+
+- **Aim:** A `D` line whose trailing period field isn't day/week/month is
+  treated as corruption -- skipped with a warning -- while the other tasks
+  still load (same handling as any other corrupted line).
+- **Commands:**
+  ```
+  list
+  bye
+  ```
+- **Expected output:**
+  ```
+  OOPS!!! Skipped 1 unreadable line(s) in your data file.
+  ____________________________________________________________
+  Here are the tasks in your list:
+  1.[D][ ] good deadline (by: Jan 01 2025) (every: month)
+  ____________________________________________________________
+  ____________________________________________________________
+  Bye. Hope to see you again soon!
+  ____________________________________________________________
+  ```
+- **Data file:**
+  ```
+  D | 0 | good deadline | 2025-01-01 | month
+  D | 0 | bad recurrence | 2025-01-01 | fortnight
   ```

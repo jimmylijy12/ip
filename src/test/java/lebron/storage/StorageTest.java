@@ -15,6 +15,7 @@ import org.junit.jupiter.api.io.TempDir;
 import lebron.task.DateTime;
 import lebron.task.Deadline;
 import lebron.task.Event;
+import lebron.task.RecurrencePeriod;
 import lebron.task.Task;
 import lebron.task.TaskList;
 import lebron.task.Todo;
@@ -107,5 +108,49 @@ public class StorageTest {
         ArrayList<Task> loaded = new Storage(dataFile()).load();
 
         assertEquals(1, loaded.size());
+    }
+
+    // ---- recurrence (B-RecurringTasks) -----------------------------------
+
+    @Test
+    public void saveThenLoad_recurringDeadline_preservesPeriod() {
+        Storage storage = new Storage(dataFile());
+        TaskList tasks = new TaskList();
+        tasks.add(new Deadline("pay rent", DateTime.parse("2025-01-01"), RecurrencePeriod.MONTH));
+        storage.save(tasks);
+
+        ArrayList<Task> loaded = new Storage(dataFile()).load();
+
+        assertEquals(1, loaded.size());
+        assertEquals("[D][ ] pay rent (by: Jan 01 2025) (every: month)", loaded.get(0).toString());
+    }
+
+    @Test
+    public void load_oldFormatFileWithoutRecurrenceField_stillLoadsAsNonRecurring() throws IOException {
+        // Simulates a data file saved before B-RecurringTasks existed: no
+        // trailing period field on the D/E lines.
+        Files.createDirectories(dataFile().getParent());
+        Files.write(dataFile(), List.of(
+                "D | 0 | old deadline | 2019-12-02",
+                "E | 0 | old event | 2019-06-01 | 2019-06-03"));
+
+        ArrayList<Task> loaded = new Storage(dataFile()).load();
+
+        assertEquals(2, loaded.size());
+        assertEquals("[D][ ] old deadline (by: Dec 02 2019)", loaded.get(0).toString());
+        assertEquals("[E][ ] old event (from: Jun 01 2019 to: Jun 03 2019)", loaded.get(1).toString());
+    }
+
+    @Test
+    public void load_corruptedRecurrencePeriod_isSkippedAndValidLinesKept() throws IOException {
+        Files.createDirectories(dataFile().getParent());
+        Files.write(dataFile(), List.of(
+                "D | 0 | good deadline | 2025-01-01 | month",
+                "D | 0 | bad recurrence | 2025-01-01 | fortnight"));
+
+        ArrayList<Task> loaded = new Storage(dataFile()).load();
+
+        assertEquals(1, loaded.size());
+        assertEquals("[D][ ] good deadline (by: Jan 01 2025) (every: month)", loaded.get(0).toString());
     }
 }
