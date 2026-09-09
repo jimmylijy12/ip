@@ -1,6 +1,8 @@
 package lebron.task;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -40,5 +42,44 @@ public class EventTest {
         Event event = new Event("camp", DateTime.parse("2019-06-01"), DateTime.parse("2019-06-03"));
         event.markAsDone();
         assertEquals("E | 1 | camp | 2019-06-01 | 2019-06-03", event.toFileFormat());
+    }
+
+    // ---- recurrence -----------------------------------------------------
+
+    @Test
+    public void toString_recurring_showsEverySuffix() {
+        Event event = new Event("standup",
+                DateTime.parse("2025-01-06 0900"), DateTime.parse("2025-01-06 0930"), RecurrencePeriod.WEEK);
+        assertEquals("[E][ ] standup (from: Jan 06 2025 9:00am to: Jan 06 2025 9:30am) (every: week)",
+                event.toString());
+    }
+
+    @Test
+    public void toFileFormat_recurring_appendsPeriodAsSixthField() {
+        Event event = new Event("standup",
+                DateTime.parse("2025-01-06 0900"), DateTime.parse("2025-01-06 0930"), RecurrencePeriod.WEEK);
+        assertEquals("E | 0 | standup | 2025-01-06 0900 | 2025-01-06 0930 | week", event.toFileFormat());
+    }
+
+    @Test
+    public void isRecurring_nonRecurring_isFalse() {
+        Event event = new Event("camp", DateTime.parse("2019-06-01"), DateTime.parse("2019-06-03"));
+        assertFalse(event.isRecurring());
+    }
+
+    @Test
+    public void isRecurring_recurring_isTrue() {
+        Event event = new Event("standup",
+                DateTime.parse("2025-01-06 0900"), DateTime.parse("2025-01-06 0930"), RecurrencePeriod.WEEK);
+        assertTrue(event.isRecurring());
+    }
+
+    @Test
+    public void markAsDone_recurring_advancesBothEndpointsPreservingDuration() {
+        Event event = new Event("standup",
+                DateTime.parse("2025-01-06 0900"), DateTime.parse("2025-01-06 0930"), RecurrencePeriod.WEEK);
+        event.markAsDone();
+        assertEquals("[E][ ] standup (from: Jan 13 2025 9:00am to: Jan 13 2025 9:30am) (every: week)",
+                event.toString());
     }
 }

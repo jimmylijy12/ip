@@ -70,6 +70,21 @@ public class DateTime {
         throw new IllegalArgumentException("unrecognised date/time: '" + input + "'");
     }
 
+    /** Returns this date/time, one day later (same time of day, if any). */
+    public DateTime plusDays(long days) {
+        return new DateTime(date.plusDays(days), time);
+    }
+
+    /** Returns this date/time, one week later (same time of day, if any). */
+    public DateTime plusWeeks(long weeks) {
+        return new DateTime(date.plusWeeks(weeks), time);
+    }
+
+    /** Returns this date/time, one month later (same time of day, if any). */
+    public DateTime plusMonths(long months) {
+        return new DateTime(date.plusMonths(months), time);
+    }
+
     /**
      * Returns the canonical string written to the data file: {@code yyyy-MM-dd}
      * for a date, or {@code yyyy-MM-dd HHmm} when a time is present.

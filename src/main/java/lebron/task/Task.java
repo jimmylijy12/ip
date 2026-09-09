@@ -48,6 +48,18 @@ public abstract class Task {
         isDone = false;
     }
 
+    /**
+     * Returns whether this task recurs. Overridden by {@link Deadline}/
+     * {@link Event} when they carry a {@link RecurrencePeriod}; a recurring
+     * task's {@link #markAsDone()} advances its date instead of staying
+     * marked done.
+     *
+     * @return true if this task recurs
+     */
+    public boolean isRecurring() {
+        return false;
+    }
+
     /** Shared helper for subclasses: returns the {@code 1}/{@code 0} done flag. */
     protected String getDoneBit() {
         return isDone ? "1" : "0";
@@ -89,18 +101,27 @@ public abstract class Task {
         Task task;
         switch (type) {
             case "T":
-                requireFieldCount(parts, 3);
+                requireFieldCount(parts, 3, 3);
                 task = new Todo(description);
                 break;
-            case "D":
-                requireFieldCount(parts, 4);
-                task = new Deadline(description, DateTime.parse(parts[3].trim()));
+            case "D": {
+                // A 5th field is the optional recurrence period; older data
+                // files without one (4 fields) are still valid -- non-recurring.
+                requireFieldCount(parts, 4, 5);
+                DateTime by = DateTime.parse(parts[3].trim());
+                RecurrencePeriod recurrence = parts.length == 5 ? RecurrencePeriod.parse(parts[4].trim()) : null;
+                task = new Deadline(description, by, recurrence);
                 break;
-            case "E":
-                requireFieldCount(parts, 5);
-                task = new Event(description,
-                        DateTime.parse(parts[3].trim()), DateTime.parse(parts[4].trim()));
+            }
+            case "E": {
+                // Same optional trailing field, one position later.
+                requireFieldCount(parts, 5, 6);
+                DateTime from = DateTime.parse(parts[3].trim());
+                DateTime to = DateTime.parse(parts[4].trim());
+                RecurrencePeriod recurrence = parts.length == 6 ? RecurrencePeriod.parse(parts[5].trim()) : null;
+                task = new Event(description, from, to, recurrence);
                 break;
+            }
             default:
                 throw new IllegalArgumentException("unknown task type '" + type + "'");
         }
@@ -125,8 +146,14 @@ public abstract class Task {
         throw new IllegalArgumentException("done flag must be 0 or 1 but was '" + flag + "'");
     }
 
-    private static void requireFieldCount(String[] parts, int expected) {
-        if (parts.length != expected) {
+    /**
+     * Requires the line to have between {@code min} and {@code max} fields
+     * (inclusive) -- e.g. a {@code D} line has 4 fields, or 5 with an
+     * optional trailing recurrence period.
+     */
+    private static void requireFieldCount(String[] parts, int min, int max) {
+        if (parts.length < min || parts.length > max) {
+            String expected = min == max ? String.valueOf(min) : min + "-" + max;
             throw new IllegalArgumentException(
                     "expected " + expected + " fields but found " + parts.length);
         }

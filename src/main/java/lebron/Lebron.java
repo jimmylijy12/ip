@@ -118,11 +118,20 @@ public class Lebron {
         return "added: " + command.getTask();
     }
 
-    /** Handles {@code MARK}/{@code UNMARK}: flips a task's done status and saves. */
+    /**
+     * Handles {@code MARK}/{@code UNMARK}: flips a task's done status and
+     * saves. A recurring task's {@code markAsDone()} rolls it forward to its
+     * next occurrence instead of staying marked done ({@link Task#isRecurring()}),
+     * so that case gets its own message.
+     */
     private String handleMarkOrUnmark(ParsedCommand command) throws LebronException {
         boolean isMark = command.getType() == ParsedCommand.Type.MARK;
         Task task = isMark ? tasks.mark(command.getIndex()) : tasks.unmark(command.getIndex());
         storage.save(tasks);
+        if (isMark && task.isRecurring()) {
+            return "Nice! I've marked this task as done. Since it recurs, "
+                    + "I've scheduled the next occurrence:" + System.lineSeparator() + "  " + task;
+        }
         String header = isMark
                 ? "Nice! I've marked this task as done:"
                 : "OK, I've marked this task as not done yet:";
