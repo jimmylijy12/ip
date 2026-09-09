@@ -3,6 +3,7 @@ package lebron.task;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import lebron.exception.LebronException;
 
@@ -100,13 +101,9 @@ public class TaskList {
      * @param keyword the text to search for
      */
     public List<Task> find(String keyword) {
-        List<Task> matches = new ArrayList<>();
-        for (Task task : tasks) {
-            if (task.getDescription().contains(keyword)) {
-                matches.add(task);
-            }
-        }
-        return matches;
+        return tasks.stream()
+                .filter(task -> task.getDescription().contains(keyword))
+                .collect(Collectors.toList());
     }
 
     private void checkIndex(int oneBasedIndex) throws LebronException {

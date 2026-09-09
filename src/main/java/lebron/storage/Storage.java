@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import lebron.task.Task;
 import lebron.task.TaskList;
@@ -87,10 +88,9 @@ public class Storage {
      * @param tasks the task list to write out
      */
     public void save(TaskList tasks) {
-        List<String> lines = new ArrayList<>();
-        for (Task task : tasks.asList()) {
-            lines.add(task.toFileFormat());
-        }
+        List<String> lines = tasks.asList().stream()
+                .map(Task::toFileFormat)
+                .collect(Collectors.toList());
         try {
             Path parent = file.getParent();
             if (parent != null) {
