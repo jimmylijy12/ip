@@ -18,7 +18,7 @@ public class Deadline extends Task {
     /** Returns the data-file line, e.g. {@code D | 0 | return book | 2019-12-02}. */
     @Override
     public String toFileFormat() {
-        return "D | " + doneBit() + " | " + description + " | " + by.toFileFormat();
+        return "D | " + getDoneBit() + " | " + description + " | " + by.toFileFormat();
     }
 
     /** Returns the display form, e.g. {@code [D][ ] return book (by: Dec 02 2019)}. */
