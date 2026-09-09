@@ -45,13 +45,6 @@ public class Ui {
         System.out.println(message);
     }
 
-    /** Prints the farewell message, wrapped in divider lines. */
-    public void showGoodbye() {
-        System.out.println(LINE);
-        System.out.println("Bye. Hope to see you again soon!");
-        System.out.println(LINE);
-    }
-
     /** Releases the input resource; call once when the program is done. */
     public void close() {
         scanner.close();
