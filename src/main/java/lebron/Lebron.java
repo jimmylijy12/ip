@@ -116,7 +116,12 @@ public class Lebron {
             case BYE:
                 return "Bye. Hope to see you again soon!";
             default:
-                // Parser only ever returns the types handled above.
+                // Parser only ever returns the types handled above, so this
+                // is unreachable given correct code; the assert documents
+                // that and catches a regression (e.g. a new ParsedCommand.Type
+                // added without a case here) under -ea, while the exception
+                // still gives defined (if generic) behaviour when it's not.
+                assert false : "Unreachable: unhandled command type " + command.getType();
                 throw new LebronException("OOPS!!! I don't understand that command.");
         }
     }

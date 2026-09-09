@@ -19,6 +19,11 @@ public abstract class Task {
      * @param description what the task is about
      */
     protected Task(String description) {
+        // Every caller (Parser, fromFileFormat) already rejects a blank
+        // description before reaching here; this documents that contract
+        // so a future caller that skips validation fails loudly under -ea
+        // instead of silently creating a blank-looking task.
+        assert description != null && !description.isBlank() : "description must not be blank";
         this.description = description;
         this.isDone = false;
     }
@@ -99,6 +104,11 @@ public abstract class Task {
             default:
                 throw new IllegalArgumentException("unknown task type '" + type + "'");
         }
+        // Every branch above either assigns task or throws -- the compiler
+        // can't verify that for a String switch, so this documents it: if a
+        // future case is added without doing one or the other, this fires
+        // instead of task silently staying null.
+        assert task != null : "every switch branch above must assign task or throw";
         if (done) {
             task.markAsDone();
         }

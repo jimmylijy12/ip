@@ -85,6 +85,11 @@ public class TaskList {
      */
     public Task get(int oneBasedIndex) throws LebronException {
         checkIndex(oneBasedIndex);
+        // checkIndex above either threw or guarantees this range; asserted
+        // so a future edit that weakens checkIndex fails loudly here rather
+        // than throwing a confusing IndexOutOfBoundsException below.
+        assert oneBasedIndex >= 1 && oneBasedIndex <= tasks.size()
+                : "checkIndex should have rejected index " + oneBasedIndex + " already";
         return tasks.get(oneBasedIndex - 1);
     }
 
