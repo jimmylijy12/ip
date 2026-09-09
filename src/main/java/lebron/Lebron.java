@@ -63,7 +63,7 @@ public class Lebron {
     }
 
     /**
-     * Carries out one parsed command against the task list.
+     * Dispatches one parsed command to the handler for its type.
      *
      * @param command the command to run
      * @return the response text
@@ -72,53 +72,86 @@ public class Lebron {
      */
     private String execute(ParsedCommand command) throws LebronException {
         switch (command.getType()) {
-            case LIST: {
-                List<Task> all = tasks.asList();
-                StringBuilder message = new StringBuilder("Here are the tasks in your list:");
-                for (int i = 0; i < all.size(); i++) {
-                    message.append(System.lineSeparator()).append(i + 1).append('.').append(all.get(i));
-                }
-                return message.toString();
-            }
+            case LIST:
+                return handleList();
             case TODO:
-                tasks.add(new Todo(command.getDescription()));
-                storage.save(tasks);
-                return "added: " + command.getDescription();
+                return handleTodo(command);
             case DEADLINE:
             case EVENT:
-                tasks.add(command.getTask());
-                storage.save(tasks);
-                return "added: " + command.getTask();
+                return handleNewTask(command);
             case MARK:
-            case UNMARK: {
-                boolean isMark = command.getType() == ParsedCommand.Type.MARK;
-                Task task = isMark ? tasks.mark(command.getIndex()) : tasks.unmark(command.getIndex());
-                storage.save(tasks);
-                String header = isMark
-                        ? "Nice! I've marked this task as done:"
-                        : "OK, I've marked this task as not done yet:";
-                return header + System.lineSeparator() + "  " + task;
-            }
-            case DELETE: {
-                Task removed = tasks.delete(command.getIndex());
-                storage.save(tasks);
-                return "Noted. I've removed this task:" + System.lineSeparator() + "  " + removed
-                        + System.lineSeparator() + "Now you have " + tasks.size() + " tasks in the list.";
-            }
-            case FIND: {
-                List<Task> matches = tasks.find(command.getDescription());
-                StringBuilder message = new StringBuilder("Here are the matching tasks in your list:");
-                for (int i = 0; i < matches.size(); i++) {
-                    message.append(System.lineSeparator()).append(i + 1).append('.').append(matches.get(i));
-                }
-                return message.toString();
-            }
+            case UNMARK:
+                return handleMarkOrUnmark(command);
+            case DELETE:
+                return handleDelete(command);
+            case FIND:
+                return handleFind(command);
             case BYE:
                 return "Bye. Hope to see you again soon!";
             default:
                 // Parser only ever returns the types handled above.
                 throw new LebronException("OOPS!!! I don't understand that command.");
         }
+    }
+
+    /** Handles {@code LIST}: shows every task. */
+    private String handleList() {
+        return formatTaskList("Here are the tasks in your list:", tasks.asList());
+    }
+
+    /** Handles {@code TODO}: adds a todo and saves. */
+    private String handleTodo(ParsedCommand command) {
+        tasks.add(new Todo(command.getDescription()));
+        storage.save(tasks);
+        return "added: " + command.getDescription();
+    }
+
+    /** Handles {@code DEADLINE}/{@code EVENT}: adds the pre-built task and saves. */
+    private String handleNewTask(ParsedCommand command) {
+        tasks.add(command.getTask());
+        storage.save(tasks);
+        return "added: " + command.getTask();
+    }
+
+    /** Handles {@code MARK}/{@code UNMARK}: flips a task's done status and saves. */
+    private String handleMarkOrUnmark(ParsedCommand command) throws LebronException {
+        boolean isMark = command.getType() == ParsedCommand.Type.MARK;
+        Task task = isMark ? tasks.mark(command.getIndex()) : tasks.unmark(command.getIndex());
+        storage.save(tasks);
+        String header = isMark
+                ? "Nice! I've marked this task as done:"
+                : "OK, I've marked this task as not done yet:";
+        return header + System.lineSeparator() + "  " + task;
+    }
+
+    /** Handles {@code DELETE}: removes a task and saves. */
+    private String handleDelete(ParsedCommand command) throws LebronException {
+        Task removed = tasks.delete(command.getIndex());
+        storage.save(tasks);
+        return "Noted. I've removed this task:" + System.lineSeparator() + "  " + removed
+                + System.lineSeparator() + "Now you have " + tasks.size() + " tasks in the list.";
+    }
+
+    /** Handles {@code FIND}: shows the tasks matching a keyword. */
+    private String handleFind(ParsedCommand command) {
+        return formatTaskList("Here are the matching tasks in your list:", tasks.find(command.getDescription()));
+    }
+
+    /**
+     * Renders a numbered list of tasks under a header line, one task per
+     * line. Shared by {@link #handleList()} and {@link #handleFind}, which
+     * differ only in the header and which tasks they pass in.
+     *
+     * @param header the line shown before the list
+     * @param taskList the tasks to number and list, in order
+     * @return the header followed by one numbered line per task
+     */
+    private static String formatTaskList(String header, List<Task> taskList) {
+        StringBuilder message = new StringBuilder(header);
+        for (int i = 0; i < taskList.size(); i++) {
+            message.append(System.lineSeparator()).append(i + 1).append('.').append(taskList.get(i));
+        }
+        return message.toString();
     }
 
     /**
